@@ -1,0 +1,246 @@
+	<!DOCTYPE html>
+	<html>
+	  <head>
+	    <style type="text/css">
+	      * { font-family :Arial }
+	      html { height: 100%; margin: 0; padding: 0;}
+	      #map-canvas { height: 500px; margin: 0; padding: 0;border: 1px solid #ccc;}
+	      body {height: 100%; margin: 0; padding-top: 51px;}
+	      header { margin: 0; padding:0;}
+		  	#topic-dropdown { font-size: .8em; }
+	      #menu-wrapper{
+	        /*width : 270px;*/
+	        position: absolute;
+	        bottom:40px;
+	        left:80px;
+	        background:#fff;
+	        padding: 20px;
+	        z-index:100;
+	        -webkit-box-shadow: -2px -2px 34px 0px rgba(0,0,0,0.75);
+	        -moz-box-shadow: -2px -2px 34px 0px rgba(0,0,0,0.75);
+	        box-shadow: -2px -2px 34px 0px rgba(0,0,0,0.75);
+	      }
+	    </style>
+	    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
+	 	<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+	    <script type="text/javascript"
+	      src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization">
+	    </script>
+	    <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/markerclusterer/src/markerclusterer.js"></script>
+	    <script type="text/javascript">
+			var styles = [{"featureType":"landscape","stylers":[{"saturation":-100},{"lightness":65},{"visibility":"on"}]},{"featureType":"poi","stylers":[{"saturation":-100},{"lightness":51},{"visibility":"simplified"}]},{"featureType":"road.highway","stylers":[{"saturation":-100},{"visibility":"simplified"}]},{"featureType":"road.arterial","stylers":[{"saturation":-100},{"lightness":30},{"visibility":"on"}]},{"featureType":"road.local","stylers":[{"saturation":-100},{"lightness":40},{"visibility":"on"}]},{"featureType":"transit","stylers":[{"saturation":-100},{"visibility":"simplified"}]},{"featureType":"administrative.province","stylers":[{"visibility":"off"}]},{"featureType":"water","elementType":"labels","stylers":[{"visibility":"on"},{"lightness":-25},{"saturation":-100}]},{"featureType":"water","elementType":"geometry","stylers":[{"hue":"#ffff00"},{"lightness":-25},{"saturation":-97}]}]
+			function initialize() {
+				var myVar = new google.maps.LatLng(33.778674, -84.396320)
+				var mapOptions = {
+					center: myVar,
+					zoom: 16,
+					styles : styles
+				};
+				map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+			}
+			
+			google.maps.event.addDomListener(window, 'load', initialize);
+	    </script>
+	    <script src="http://code.jquery.com/jquery.min.js"></script>
+	    <script>
+			/**** GENERIC LOADER FOR ALL MAPS ****/
+
+			// global array of objects of data currently on the map, in the form of obj.data, obj.clearMap
+			var currData = [];
+
+			$(function(){
+				var mapGenerator = new Object();
+
+				$('#clearButton').click(function() {
+					// clear the map by reloading the page
+					window.location = '/map';
+					return false;
+				})
+
+				$('#goButton').click(function(e){
+					e.preventDefault();
+
+					// see which map we're creating
+					var mapValStr = $('#topic-dropdown').val();
+					var mapValue = mapValStr.split(",");
+
+					// get the requisite script for the map; script must have generateMap and clearMap defined
+					$.getScript('mapjs?file='+mapValue[0]).done(function( script, textStatus ) {
+						var obj = window[(mapValue[0])]; // dynamically load in the object defined by the script
+						// set and run properties of current MapGenerator object
+						mapGenerator.generateMap = obj.generateMap;
+						if (mapValue.length > 1)
+							mapGenerator.generateMap(map, mapValStr.replace(mapValue[0]+",",""));
+						else
+							mapGenerator.generateMap(map);
+					})
+				})
+			})
+
+			/**** UTILITIY FUNCS ****/
+
+			/* Adapted from SparkFun Inventor's Kit Example sketch 03
+			* This sketch was written by SparkFun Electronics, with lots of help from the Arduino community.
+			* https://learn.sparkfun.com
+			*/
+			function getRGB(color) {
+				  var redIntensity;
+				  var greenIntensity;
+				  var blueIntensity;
+
+				  // Here we'll use an "if / else" statement to determine which
+				  // of the three (R,G,B) zones x falls into. Each of these zones
+				  // spans 255 because analogWrite() wants a number from 0 to 255.
+
+				  // In each of these zones, we'll calculate the brightness
+				  // for each of the red, green, and blue LEDs within the RGB LED.
+
+				  if (color <= 255)          // zone 1
+				  {
+					redIntensity = 255 - color;    // red goes from on to off
+					greenIntensity = color;        // green goes from off to on
+					blueIntensity = 0;             // blue is always off
+				  }
+				  else if (color <= 511)     // zone 2
+				  {
+					redIntensity = 0;                     // red is always off
+					greenIntensity = 255 - (color - 256); // green on to off
+					blueIntensity = (color - 256);        // blue off to on
+				  }
+				  else // color >= 512       // zone 3
+				  {
+					redIntensity = (color - 512);         // red off to on
+					greenIntensity = 0;                   // green is always off
+					blueIntensity = 255 - (color - 512);  // blue on to off
+				  }
+
+				  // Now that the brightness values have been set, command the LED
+				  // to those values
+				 return redIntensity+","+greenIntensity+","+blueIntensity;
+			}
+	    function getRandomColor() {
+	      var letters = '0123456789ABCDEF'.split('');
+	      var color = '#';
+	      for (var i = 0; i < 6; i++ ) {
+	          color += letters[Math.floor(Math.random() * 16)];
+	      }
+	      return color;
+	    }
+	    </script>
+
+	  </head>
+	  <body>
+	 		<header>
+	  		<nav class="navbar navbar-inverse navbar-fixed-top">
+	  			<div class="container-fluid">
+		 		  <!-- Brand and toggle get grouped for better mobile display -->
+	    		<div class="navbar-header">
+	      			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	        		<span class="sr-only">Toggle navigation</span>
+	        		<span class="icon-bar"></span>
+	       			<span class="icon-bar"></span>
+	       			<span class="icon-bar"></span>
+	      			</button>
+	      			<a class="navbar-brand" href="#">Crowd sourced connectivity</a>
+	    		</div>
+	    		<!-- Collect the nav links, forms, and other content for toggling -->
+	    		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			      <!--
+			      <ul class="nav navbar-nav">
+	    		    <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
+	        		<li><a href="#">Link</a></li>
+	        		<li class="dropdown">
+	          		<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
+	          		<ul class="dropdown-menu">
+	            		<li><a href="#">Action</a></li>
+	            		<li><a href="#">Another action</a></li>
+	            		<li><a href="#">Something else here</a></li>
+	            		<li role="separator" class="divider"></li>
+	            		<li><a href="#">Separated link</a></li>
+	            		<li role="separator" class="divider"></li>
+	            		<li><a href="#">One more separated link</a></li>
+	          		</ul>
+	        		</li>
+	      		</ul>
+	      		-->
+			      <ul class="nav navbar-nav navbar-right">
+			        <li class="dropdown">
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Menu <span class="caret		"></span></a>
+			          <ul class="dropdown-menu">
+			            <li><a href="#">Option 1</a></li>
+			            <li><a href="#">Option 2</a></li>
+			            <li><a href="#">Option 3</a></li>
+			            <!--
+			            <li role="separator" class="divider"></li>
+			            <li><a href="#">Separated link</a></li>
+			            -->
+			          </ul>
+			        </li>
+			      </ul>
+			      <form class="navbar-form navbar-right" role="search">
+			        <div class="form-group">
+			          <input type="text" class="form-control" placeholder="Search">
+			        </div>
+			        <button type="submit" class="btn btn-default">Find Router</button>
+			      </form>
+			    </div>
+			  </div>
+			</nav>
+	  	</header>
+	  	<div class = "container">
+	  		<ul class = "nav nav-tabs nav-justified">
+	  			<li class = "active"><a href = "#Home" data-toggle="tab">Home</a></li>
+	  			<li><a id = "mapTab" href="#SSID" data-toggle="tab">SSID</a></li>
+	  			<li><a id = "mapTab" href="#Prediction" data-toggle="tab">Prediction</a></li>
+	  		</ul>
+	  		<div class="tab-content">
+	  			<div class="tab-pane" id="Home">
+	  			</div>
+	  			<div class="tab-pane" id="SSID">
+	  				<div id="menu-wrapper">
+	  					<form class="pure-form pure-form-inline" id="topic-form">
+	  						<fieldset>
+	  							<legend>Map Type:</legend>
+	  							<select name="topic" id="topic-dropdown">
+	  								<option value="heatmapcustom,GTwifi">Custom Heat Map of GTwifi</option>
+	  								<option value="bssidclusteredmap,GTwifi">Clustered Distinct BSSIDs of GTwifi</option>
+	  								<option value="bssidareamap,GTwifi">BSSID Area map of GTwifi</option>
+	  								<option value="bssidmap">Distinct BSSIDs of GTwifi</option>
+	  								<option value="droppointsmap">Drop Points of GTwifi</option>
+	  								<option value="individualsignalsmap">Individual User Signals of GTwifi</option>
+	  								<option value="pathsmap">Paths Covered</option>
+	  								<option value="heatmap,GTwifi">Weighted Heat Map of GTwifi</option>
+	  								<option value="heatmap,GTRI-Device">Weighted Heat Map of GTRI</option>
+	  								<option value="heatmap,GTother">Weighted Heat Map of GTother</option>
+	  								<option value="heatmap,GTvisitor">Weighted Heat Map of GTvisitor</option>
+	  							</select>
+	  							<button id="goButton" type="submit" class="pure-button pure-button-primary">Go</button>
+	  							<button id="clearButton" class="pure-button">Clear</button>
+	  						</fieldset>
+	  					</form>
+	  				</div>
+	  				<div id="map-canvas"></div>
+	  			</div>
+	  			<div class = "tab-pane" id = "Prediction">
+	  				<div id="map-canvas"></div>
+	  			</div>
+	  		</div>
+	  	</div>
+	  <script type="text/javascript">
+	  	$('#mapTab').on('shown.bs.tab', function (e) {
+   			google.maps.event.trigger(map, 'resize'); 
+			});
+	  </script>
+	    <!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+	  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+	  </body>
+	</html>

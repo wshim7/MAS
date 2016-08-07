@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/gtwifi" android:title="@string/gtwifi" />
+    <item android:id="@+id/gtvisitor" android:title="@string/gtvisitor" />
+    <item android:id="@+id/gtother" android:title="@string/gtother" />
+</menu>
